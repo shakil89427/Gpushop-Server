@@ -35,6 +35,7 @@ async function run() {
   } finally {
     await client.close();
   }
+
   /* Get Upcoming Products */
   try {
     app.get("/upcoming", async (req, res) => {
@@ -48,6 +49,7 @@ async function run() {
   } finally {
     await client.close();
   };
+
   /* Get Product Detail */
   try {
     app.get("/details/:id", async (req, res) => {
@@ -62,6 +64,7 @@ async function run() {
   } finally {
     await client.close();
   };
+
   /* Add To Cart */
   try {
     app.post("/addtocart", async (req, res) => {
@@ -88,6 +91,7 @@ async function run() {
   } finally {
     await client.close();
   };
+
   /* Get All from cart */
   try {
     app.get("/allcart/:id", async (req, res) => {
@@ -102,6 +106,7 @@ async function run() {
   } finally {
     await client.close();
   };
+
   /* Delate from cart */
   try {
     app.delete("/deletefromcart/:id", async (req, res) => {
@@ -117,6 +122,7 @@ async function run() {
   } finally {
     await client.close();
   };
+
   /* Add Review */
   try {
     app.post("/addreview", async (req, res) => {
@@ -130,6 +136,7 @@ async function run() {
   } finally {
     await client.close();
   };
+
   /* Get All Reviews */
   try {
     app.get("/allreviews", async (req, res) => {
@@ -143,6 +150,34 @@ async function run() {
   } finally {
     await client.close();
   };
+
+  /* Place Order */
+  try {
+    app.post("/placeorder", async (req, res) => {
+      await client.connect();
+      const data = req.body
+      const userId = data[0].userId;
+      const cartdatabase = client.db("cart");
+      const cartcollection = cartdatabase.collection(userId);
+      const deletequery = {userId:userId}
+      const orderdatabase = client.db("orders");
+      const allorders = orderdatabase.collection('allorders');
+      const result = await allorders.insertMany(data)
+      if(result.acknowledged){
+        const newresult = await cartcollection.deleteMany(deletequery)
+        if(newresult.acknowledged){
+          res.send(newresult)
+        }
+      }
+    });
+  } finally {
+    await client.close();
+  };
+
+
+
+
+
 }
 run().catch(console.dir);
 
