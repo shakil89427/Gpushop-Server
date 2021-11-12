@@ -278,6 +278,53 @@ try {
   await client.close();
 };
 
+/* Add User */
+try {
+  app.post("/adduser", async (req, res) => {
+    await client.connect();
+    const data = req.body
+    const email = req.body.email
+    const database = client.db("users");
+    const allusers = database.collection('allusers');
+    const findby = {email:email}
+    const result = await allusers.findOne(findby)
+    if(!result){
+      data.role = 'user'
+      const newresult = await allusers.insertOne(data)
+      if(newresult.acknowledged){
+        res.send(data)
+      }
+    }
+    else{
+      res.send(result)
+    }
+  });
+} finally {
+  await client.close();
+};
+
+/* Make Admin */
+try {
+  app.post("/makeadmin/:id", async (req, res) => {
+    await client.connect();
+    const email = req.params.id
+    const database = client.db("users");
+    const allusers = database.collection('allusers');
+    const findby = {email:email}
+    const updated = {$set:{role:'Admin'}}
+    const result = await allusers.findOne(findby)
+    if(!result){
+      res.send('Sorry user not Registered')
+    }
+    else{
+      const newresult = await allusers.updateOne(findby,updated)
+      res.send(newresult)
+    }
+    });
+} finally {
+  await client.close();
+};
+
 
 
 
