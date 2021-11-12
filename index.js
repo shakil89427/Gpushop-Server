@@ -174,6 +174,36 @@ async function run() {
     await client.close();
   };
 
+/* My orders */
+try {
+  app.get("/myorders/:id", async (req, res) => {
+    await client.connect();
+    const findby = req.params.id
+    const database = client.db("orders");
+    const allorders = database.collection('allorders');
+    const allitems = allorders.find({useremail:findby});
+    const result = await allitems.toArray();
+    res.send(result)
+  });
+} finally {
+  await client.close();
+};
+
+/* Delate Order */
+try {
+  app.delete("/delateorder/:id", async (req, res) => {
+    await client.connect();
+    const id = req.params.id
+    const database = client.db("orders");
+    const orders = database.collection("allorders");
+    const findby = {_id: ObjectId(id)};
+    const result = await orders.deleteOne(findby);
+    res.send(result);
+  });
+} finally {
+  await client.close();
+};
+
 
 
 
