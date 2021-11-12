@@ -204,6 +204,80 @@ try {
   await client.close();
 };
 
+/* Add Product */
+try {
+  app.post("/addproduct", async (req, res) => {
+    await client.connect();
+    const data = req.body
+    const database = client.db("gpushop");
+    const product = database.collection('products');
+    const result = await product.insertOne(data)
+    res.send(result)
+  });
+} finally {
+  await client.close();
+};
+
+/* Delate Product */
+try {
+  app.delete("/delateproduct/:id", async (req, res) => {
+    await client.connect();
+    const id = req.params.id
+    const database = client.db("gpushop");
+    const products = database.collection("products");
+    const findby = {_id: ObjectId(id)};
+    const result = await products.deleteOne(findby);
+    res.send(result);
+  });
+} finally {
+  await client.close();
+};
+
+/* All orders */
+try {
+  app.get("/allorders", async (req, res) => {
+    await client.connect();
+    const database = client.db("orders");
+    const allorders = database.collection('allorders');
+    const allitems = allorders.find({});
+    const result = await allitems.toArray();
+    res.send(result)
+  });
+} finally {
+  await client.close();
+};
+
+/* Change Status */
+try {
+  app.post("/changestatus/:id", async (req, res) => {
+    await client.connect();
+    const id = req.params.id
+    const database = client.db("orders");
+    const allorders = database.collection('allorders');
+    const findby = {_id: ObjectId(id)}
+    const updated = {$set:{status: 'Approved'}}
+    const result = await allorders.updateOne(findby,updated)
+    res.send(result)
+  });
+} finally {
+  await client.close();
+};
+
+/* Delete Review */
+try {
+  app.delete("/deletereview/:id", async (req, res) => {
+    await client.connect();
+    const id = req.params.id
+    const database = client.db("reviews");
+    const reviews = database.collection('allreviews');
+    const findby = {_id: ObjectId(id)}
+    const result = await reviews.deleteOne(findby)
+    res.send(result)
+  });
+} finally {
+  await client.close();
+};
+
 
 
 
