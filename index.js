@@ -314,7 +314,7 @@ try {
     const updated = {$set:{role:'Admin'}}
     const result = await allusers.findOne(findby)
     if(!result){
-      res.send('Sorry user not Registered')
+      res.send(result)
     }
     else{
       const newresult = await allusers.updateOne(findby,updated)
