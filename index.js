@@ -325,6 +325,21 @@ try {
   await client.close();
 };
 
+/* Find User */
+try {
+  app.get("/finduser/:id", async (req, res) => {
+    await client.connect();
+    const email = req.params.id
+    const database = client.db("users");
+    const allusers = database.collection('allusers');
+    const findby = {email:email}
+    const result = await allusers.findOne(findby)
+    res.send(result)
+    });
+} finally {
+  await client.close();
+};
+
 
 
 
