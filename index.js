@@ -284,6 +284,7 @@ try {
     await client.connect();
     const data = req.body
     const email = req.body.email
+    const options = { upsert: true };
     const database = client.db("users");
     const allusers = database.collection('allusers');
     const findby = {email:email}
@@ -296,7 +297,10 @@ try {
       }
     }
     else{
-      res.send(result)
+      const updated  ={$set:data}
+      const moreresult = await allusers.updateOne(findby, updated, options)
+      const finalresult = await allusers.findOne(findby)
+      res.send(finalresult)
     }
   });
 } finally {
@@ -327,14 +331,22 @@ try {
 
 /* Find User */
 try {
-  app.get("/finduser/:id", async (req, res) => {
+  app.post("/finduser", async (req, res) => {
     await client.connect();
-    const email = req.params.id
+    let data = req.body
+    const email = data.email
     const database = client.db("users");
     const allusers = database.collection('allusers');
     const findby = {email:email}
     const result = await allusers.findOne(findby)
-    res.send(result)
+    if(!result){
+      data['role']= 'user'
+      const newresult = await allusers.insertOne(data)
+      res.send(newresult)
+    }
+    else{
+      res.send(result)
+    }
     });
 } finally {
   await client.close();
