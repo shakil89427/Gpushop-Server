@@ -1,9 +1,6 @@
-# Created for Assaignment 12
+# Created for Simple Ecommerce Gpushop
 
-
-## Used to Create
-
-cors,express,dotenv,mongodb
+## Used Node Js,cors,express,dotenv,mongodb to Create
 
 ### `Created by`
 
