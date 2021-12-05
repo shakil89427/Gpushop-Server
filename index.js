@@ -352,17 +352,35 @@ async function run() {
   /* Create Payment intend */
   try {
     app.post("/create-payment-intent", async (req, res) => {
+      await client.connect();
       const price = req.body.price * 100;
-      const paymentIntent = await stripe.paymentIntents.create({
+      const id = req.body.id;
+      const data = req.body.data;
+      const payment = await stripe.paymentIntents.create({
         amount: price,
         currency: "usd",
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        payment_method: id,
+        confirm: true,
       });
-      res.send({ clientSecret: paymentIntent.client_secret });
+      if (payment.status === "succeeded") {
+        const userId = data[0].userId;
+        payment.orderInfo = data;
+        const cartdatabase = client.db("cart");
+        const cartcollection = cartdatabase.collection(userId);
+        const deletequery = { userId: userId };
+        const orderdatabase = client.db("orders");
+        const allorders = orderdatabase.collection("allorders");
+        const result = await allorders.insertOne(payment);
+        if (result.acknowledged) {
+          const newresult = await cartcollection.deleteMany(deletequery);
+          if (newresult.acknowledged) {
+            res.send(newresult);
+          }
+        }
+      }
     });
   } finally {
+    await client.close();
   }
 }
 run().catch(console.dir);
