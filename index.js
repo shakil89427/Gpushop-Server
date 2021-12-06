@@ -70,17 +70,17 @@ async function run() {
   try {
     app.post("/addtocart", async (req, res) => {
       await client.connect();
-      const data = req.body;
+      const product = req.body.product;
+      const user = req.body.userId;
       const database = client.db("cart");
-      const cart = database.collection(data.userId);
-      const findby = { _id: data._id };
+      const cart = database.collection(user);
+      const findby = { _id: product._id };
       const result = await cart.findOne(findby);
       if (!result) {
-        data.quantity = 1;
-        const again = await cart.insertOne(data);
+        const again = await cart.insertOne(product);
         res.send(again);
       } else {
-        const newquantity = result.quantity + 1;
+        const newquantity = result.quantity + product.quantity;
         const updated = {
           $set: { quantity: newquantity },
         };
@@ -146,29 +146,6 @@ async function run() {
       const allitems = reviews.find({});
       const result = await allitems.toArray();
       res.send(result);
-    });
-  } finally {
-    await client.close();
-  }
-
-  /* Place Order */
-  try {
-    app.post("/placeorder", async (req, res) => {
-      await client.connect();
-      const data = req.body;
-      const userId = data[0].userId;
-      const cartdatabase = client.db("cart");
-      const cartcollection = cartdatabase.collection(userId);
-      const deletequery = { userId: userId };
-      const orderdatabase = client.db("orders");
-      const allorders = orderdatabase.collection("allorders");
-      const result = await allorders.insertMany(data);
-      if (result.acknowledged) {
-        const newresult = await cartcollection.deleteMany(deletequery);
-        if (newresult.acknowledged) {
-          res.send(newresult);
-        }
-      }
     });
   } finally {
     await client.close();
@@ -349,34 +326,27 @@ async function run() {
     await client.close();
   }
 
-  /* Create Payment intend */
+  /* Make Payment */
   try {
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/payment", async (req, res) => {
       await client.connect();
-      const price = req.body.price * 100;
-      const id = req.body.id;
-      const data = req.body.data;
-      const payment = await stripe.paymentIntents.create({
-        amount: price,
+      const user = req.body.rest;
+      const orderdatabase = client.db("orders");
+      const allorders = orderdatabase.collection("allorders");
+      const cartdatabase = client.db("cart");
+      const cartcollection = cartdatabase.collection(user.uid);
+      const deletequery = { userId: user.uid };
+
+      const result = await stripe.charges.create({
+        source: req.body.token.id,
+        amount: req.body.price,
         currency: "usd",
-        payment_method: id,
-        confirm: true,
       });
-      if (payment.status === "succeeded") {
-        const userId = data[0].userId;
-        payment.orderInfo = data;
-        const cartdatabase = client.db("cart");
-        const cartcollection = cartdatabase.collection(userId);
-        const deletequery = { userId: userId };
-        const orderdatabase = client.db("orders");
-        const allorders = orderdatabase.collection("allorders");
-        const result = await allorders.insertOne(payment);
-        if (result.acknowledged) {
-          const newresult = await cartcollection.deleteMany(deletequery);
-          if (newresult.acknowledged) {
-            res.send(newresult);
-          }
-        }
+      if (result) {
+        user.paymentInfo = result;
+        const complete = await allorders.insertOne(user);
+        const again = await cartcollection.deleteMany(deletequery);
+        res.send(complete);
       }
     });
   } finally {
